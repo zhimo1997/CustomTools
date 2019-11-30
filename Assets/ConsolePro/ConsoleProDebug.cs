@@ -57,6 +57,16 @@ public static class ConsoleProDebug
 		}
 	}
 
+    public static void PrintMethodInfos() {
+        if (ConsoleWindowType == null) {
+            return;
+        }
+        MethodInfo[] methods = ConsoleWindowType.GetMethods();
+        for (int i = 0; i < methods.Length; i++) {
+            Debug.Log(methods[i].Name);
+        }
+    }
+
 	private static bool _checkedConsoleWindowType = false;
 	private static Type _consoleWindowType = null;
 	private static Type ConsoleWindowType

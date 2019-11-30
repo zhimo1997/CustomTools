@@ -65,7 +65,7 @@ public static class CustomTools
             Debug.Log(m.Name);
         }
         MethodInfo filterMethod = LogEntryType.GetMethod("SetFilteringText"); 
-        Debug.Log(filterMethod.Name);
+        //Debug.Log(filterMethod.Name);
         args[0] = "console";
         filterMethod.Invoke(null,new object[] {"console" });
 
