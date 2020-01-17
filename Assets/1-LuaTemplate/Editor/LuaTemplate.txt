@@ -1,0 +1,7 @@
+#NAME# = Class(function(self)
+
+end)
+
+function #NAME#:DoDestroy()
+
+end
