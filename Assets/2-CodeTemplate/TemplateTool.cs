@@ -1,9 +1,9 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-
+using System;
 
 public class CodeTemplateWindow : EditorWindow
 {
@@ -22,7 +22,18 @@ public class CodeTemplateWindow : EditorWindow
     private static readonly string LuaMVCPath = "Assets/Lua/UI";
     private static readonly string LuaDataPath = "Assets/Lua/Data";
     private static readonly string LuaLogicPath = "Assets/Lua/LogicScript";
+    [NonSerialized]
     public static string uiModeleClassPath = "Assets/Lua/UI";
+
+    // 修改相对应的文件
+    // LuaGlobal内添加Logic
+    private static readonly string LuaGlobalLogicWatchText = "设置logic";
+    private static readonly string LuaGlobalLogicAddText = "    LuaGlobal.#LogicName# = require('LogicScript/#LogicName#')()";
+    private static readonly string LuaGlobalPath = "Assets/Lua/Utils/LuaGlobal.lua";
+    // DataManager内添加Data
+    private static readonly string DataManagerWatchText = "添加Data";
+    private static readonly string DataManagerAddText = "    InstanceData.#DataName# = require('Data.#DataName#')()";
+    private static readonly string DataManagerPath = "Assets/Lua/Manager/DataManager.lua";
 
     [MenuItem("====Tools====/代码模板/模板创建")]
     public static void ShowWindow()
@@ -81,7 +92,11 @@ public class CodeTemplateWindow : EditorWindow
         EditorGUILayout.TextField(uiModeleClassPath);
         if (GUILayout.Button("选择"))
         {
-            uiModeleClassPath = EditorUtility.OpenFolderPanel("选择文件夹", uiModeleClassPath, "");
+            string selectPath = EditorUtility.OpenFolderPanel("选择文件夹", uiModeleClassPath, "");
+            Debug.Log(selectPath);
+            if (selectPath != null && selectPath != "") {
+                uiModeleClassPath = selectPath;
+            }
         }
         EditorGUILayout.EndHorizontal();
 
@@ -122,12 +137,46 @@ public class CodeTemplateWindow : EditorWindow
     {
         string dstDataPath = string.Format("{0}/{1}Data.lua", LuaDataPath, name);
         CreateTemplate(LuaTemplateScriptDataPath, dstDataPath, name);
+        AddCodeToFile(DataManagerPath, DataManagerWatchText, DataManagerAddText, "#DataName#", name + "Data");
     }
 
     private void CreateLogicModule(string name)
     {
         string dstDataPath = string.Format("{0}/{1}Logic.lua", LuaLogicPath, name);
         CreateTemplate(LuaTemplateScriptLogicPath, dstDataPath, name);
+        AddCodeToFile(LuaGlobalPath, LuaGlobalLogicWatchText, LuaGlobalLogicAddText, "#LogicName#", name + "Logic");
+    }
+
+    private void AddCodeToFile(string filePath, string watchText, string codeAddText, string replaceText, string name){
+        int index = 0;
+        string text = ReadAsset(filePath);
+        string[] lineInFile = Regex.Split(text, "\n");
+        for (int i = 0; i < lineInFile.Length; i++)
+        {
+            if (Regex.IsMatch(lineInFile[i], watchText)){
+                index = i + 1;
+                break;
+            }
+        }
+        string newtext = "";
+        for (int i = 0; i < lineInFile.Length + 1; i++)
+        {
+            if (i < index)
+                newtext += lineInFile[i] + "\n";
+            if (i == index)
+            {
+                string fileText = codeAddText;
+                fileText = Regex.Replace(fileText, replaceText, name);
+
+                newtext += fileText + "\n";
+            }
+            if (i > index)
+                newtext += lineInFile[i - 1] + "\n";
+        }
+        if (!string.IsNullOrEmpty(newtext))
+        {
+            WriteAsset(filePath, newtext, false);
+        }
     }
 
     public static void CreateClassModule(string name)
@@ -140,11 +189,28 @@ public class CodeTemplateWindow : EditorWindow
         Validate();
         string content = File.ReadAllText(TemplatePathUtil.GetDiskPath(templateFile));
         content = content.Replace("#NAME#", moduleName);
-        FileStream fs = new FileStream(dstPath, FileMode.Create, FileAccess.Write);
-        StreamWriter sw = new StreamWriter(fs, Encoding.UTF8);
-        sw.Write(content);
-        sw.Close();
-        fs.Close();
+        File.WriteAllText(dstPath, content, new System.Text.UTF8Encoding(false));
         AssetDatabase.Refresh();
+    }
+    static string ReadAsset(string resPath)
+    {
+        string text = "";
+        if (File.Exists(resPath))
+        {
+            StreamReader streamReader = new StreamReader(resPath);
+            text = streamReader.ReadToEnd();
+            streamReader.Close();
+        }
+        return text;
+    }
+    static void WriteAsset(string desPath, string text, bool encoderShouldEmitUTF8Identifier = true)
+    {
+        bool throwOnInvalidBytes = false;
+        UTF8Encoding encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier, throwOnInvalidBytes);
+        bool append = false;
+        StreamWriter streamWriter = new StreamWriter(desPath, append, encoding);
+        streamWriter.Write(text);
+        streamWriter.Close();
+        AssetDatabase.ImportAsset(desPath);
     }
 }
