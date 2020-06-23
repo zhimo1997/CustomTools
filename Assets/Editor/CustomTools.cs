@@ -75,4 +75,10 @@ public static class CustomTools
     public static void ChooseLogColor() {
         //EditorWindow.GetWindow<>();
     }
+    [MenuItem ("====Tools====/Console/OpenConsole _d")]
+    public static void OpenConsole()
+    {
+        var consoleWindowType = typeof(EditorWindow).Assembly.GetType("UnityEditor.ConsoleWindow");
+        EditorWindow.GetWindow(consoleWindowType);
+    }
 }
