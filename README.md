@@ -5,3 +5,7 @@ Editor下包含了两个工具文件和一个模板文件，用于创建lua和xl
 ## 2-CodeTemplate
 
 包含了代码的模板，可以添加各种模板代码然后做替换，需要自己在相应文件夹下创建好需要的模板文件；
+
+## 3-Git Hook
+
+hook设置的批处理，pre-commit，hookmeta文件，使用luacheck做代码自动检查；
